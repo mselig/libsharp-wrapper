@@ -1,0 +1,56 @@
+## REQUIREMENTS
+## ============
+##
+## libsharp
+## --------
+##
+## - GNU make
+## - GNU gcc (v4.x)
+## - GNU autoconf
+## - git
+##
+## libsharp-wrapper
+## ----------------
+##
+## - Cython (v0.1x)
+## - Python (v2.7.x)
+## - Python Development Tools
+## - Numpy
+## - Numpy Development Tools
+##
+##
+##
+## COMPILATION
+## ===========
+##
+## libsharp
+## --------
+
+git clone git://git.code.sf.net/p/libsharp/code libsharp-code
+cd libsharp-code
+autoconf
+configure --enable-pic --disable-openmp
+make
+cd ..
+
+## libsharp-wrapper
+## ----------------
+
+git clone git://github.com/mselig/libsharp-wrapper.git libsharp-wrapper
+cd libsharp-wrapper
+python setup.py build_ext
+
+## INSTALLATION
+## ============
+
+python setup.py install
+
+## or
+## python setup.py install --user
+## or
+## python setup.py install --install-lib=/SOMEWHERE
+
+
+
+## cd ..
+## rm -rf libsharp-*
