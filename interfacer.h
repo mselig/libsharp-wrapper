@@ -18,7 +18,10 @@
 
 /*
  *  libsharp-wrapper is being developed at the
- *  Max-Planck-Institute for Astrophysik.
+ *  Max-Planck-Institute for Astrophysics.
+ *
+ *  Copyright (C) 2012 Max-Planck-Society
+ *  Author: Marco Selig
  */
 
 typedef struct
