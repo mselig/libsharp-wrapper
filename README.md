@@ -12,7 +12,7 @@ Features
 
 - Spherical harmonics transformations
 - Support for NumPy arrays in float and double precision
-- Support function for geometrical quantities
+- Support functions for geometrical quantities
 
 License
 -------
