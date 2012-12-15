@@ -46,11 +46,9 @@ python setup.py build_ext
 python setup.py install
 
 ## or
-## python setup.py install --user
+# python setup.py install --user
 ## or
-## python setup.py install --install-lib=/SOMEWHERE
+# python setup.py install --install-lib=/SOMEWHERE
 
-
-
-## cd ..
-## rm -rf libsharp-*
+# cd ..
+# rm -rf libsharp-*

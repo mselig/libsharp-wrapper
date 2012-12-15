@@ -1,7 +1,8 @@
 libsharp-wrapper
 ================
 
-Python wrapper for `**libsharp** <http://sourceforge.net/projects/libsharp/>`_
+Python wrapper for
+** `libsharp <http://sourceforge.net/projects/libsharp/>`_ **
 
 Summary
 -------
@@ -9,9 +10,8 @@ Summary
 Description
 ...........
 
-The **libsharp-wrapper** is a Python wrapper for the C-library
-`**libsharp** <http://sourceforge.net/projects/libsharp/>`_. It is written
-in Cython and C++. The functional layout is inspired by
+The **libsharp-wrapper** is a Python wrapper for the C-library **libsharp**.
+It is written in Cython and C++. The functional layout is inspired by
 `healpy <https://github.com/healpy/healpy>`_.
 
 The wrapper provides access to the spherical harmonics transformation of the
@@ -24,11 +24,36 @@ Features
 - Spherical harmonics transformations from and to the Gauss-Legendre
   pixelization::
 
-	map2alm              alm2map
+	alm2map()          map2alm()
+	alm2map_f()        map2alm_f()
 
 - Support for NumPy arrays in double and float precision (function operating on
   floats are suffixed by ``_f``)
-- Support functions for geometrical quantities
+
+- Power spectrum analysis and field synthesis (assuming statistically
+  homogeneous and isotropic random fields)
+
+	anaalm()           anafast()          synalm()          synfast()
+	anaalm_f()         anafast_f()        synalm_f()        synfast_f()
+
+- Smoothing with Gaussian kernel::
+
+	smoothalm()        smoothmap()
+
+- Support functions for pixelization issues::
+
+	bounds()           weight()
+	vol()              weight_f()
+
+- Support functions for geometrical quantities and indices::
+
+	ang2pix()          ang2xyz()          pix2xyz()         lm2i()
+	pix2ang()          xyz2ang()          xyz2pix()         i2lm()
+	pix2nn()
+
+- Non-trivial scalar product in spherical harmonics basis::
+
+	dotlm()            dotlm_f()
 
 Installation
 ------------
