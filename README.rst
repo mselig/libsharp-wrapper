@@ -127,5 +127,5 @@ The **libsharp-wrapper** is licensed under the
 `GPLv2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
 and is distributed *without any warranty*.
 
-The current version is tagged **v0.1**.
+The current version is tagged **v0.1.2**.
 
