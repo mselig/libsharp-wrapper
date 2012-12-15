@@ -1,8 +1,8 @@
 libsharp-wrapper
 ================
 
-Python wrapper for
-`\**libsharp** <http://sourceforge.net/projects/libsharp/>`_
+A Python wrapper for the
+`libsharp <http://sourceforge.net/projects/libsharp/>`_ library
 
 Summary
 -------
