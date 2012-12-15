@@ -117,7 +117,8 @@ In python run::
 
 	>>> import numpy as np
 	>>> import libsharp_wrapper_gl as gl
-	>>> gl.map2alm(np.ones(28))
+	>>> gl.map2alm(np.ones(28), nlat=4, nlon=7, lmax=3, mmax=3)[0]
+	(3.5449077018110322+0j)
 
 Release Notes
 -------------
