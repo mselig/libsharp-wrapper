@@ -1,0 +1,15 @@
+wrapper.c
+wrapper.cpp
+*.html
+*.o
+*.so
+*.log
+*.egg
+*.egg-info
+*~
+
+.git/
+.svn/
+.spyderproject
+
+build/
