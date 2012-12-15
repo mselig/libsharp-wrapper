@@ -2,7 +2,7 @@ libsharp-wrapper
 ================
 
 Python wrapper for
-** `libsharp <http://sourceforge.net/projects/libsharp/>`_ **
+**`libsharp <http://sourceforge.net/projects/libsharp/>`_\**
 
 Summary
 -------
@@ -31,7 +31,7 @@ Features
   floats are suffixed by ``_f``)
 
 - Power spectrum analysis and field synthesis (assuming statistically
-  homogeneous and isotropic random fields)
+  homogeneous and isotropic random fields)::
 
 	anaalm()           anafast()          synalm()          synfast()
 	anaalm_f()         anafast_f()        synalm_f()        synfast_f()
