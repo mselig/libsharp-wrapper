@@ -113,7 +113,7 @@ Alternatively, a private or user specific installation can be done by::
 Test
 ....
 
-In python run::
+In Python run::
 
 	>>> import numpy as np
 	>>> import libsharp_wrapper_gl as gl
