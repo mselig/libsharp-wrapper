@@ -2,7 +2,7 @@ libsharp-wrapper
 ================
 
 Python wrapper for
-**`libsharp <http://sourceforge.net/projects/libsharp/>`_\**
+` **libsharp** <http://sourceforge.net/projects/libsharp/>`_
 
 Summary
 -------
