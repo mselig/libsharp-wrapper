@@ -27,8 +27,8 @@ Features
 	alm2map()          map2alm()
 	alm2map_f()        map2alm_f()
 
-- Support for NumPy arrays in double and float precision (function operating on
-  floats are suffixed by ``_f``)
+- Support for NumPy arrays in double and float precision (functions operating
+  on floats are suffixed by ``_f``)
 
 - Power spectrum analysis and field synthesis (assuming statistically
   homogeneous and isotropic random fields)::
