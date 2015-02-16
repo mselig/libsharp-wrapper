@@ -96,7 +96,27 @@ cpdef double pi = 3.141592653589793238462643383279502884197169399375105820974944
 
 ##-----------------------------------------------------------------------------
 
-cdef void set_para4alen(int alen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax):
+cdef void check_para4alen(int alen,int* p_lmax,int* p_mmax) except *:
+    """
+        check_para4alen(int alen,int* p_lmax,int* p_mmax)
+        > checks whether parameters agree with the length of a spherical harmonics transform
+
+    """
+    if(alen<>(p_lmax[0]+1)*(p_mmax[0]+1)-(p_mmax[0]*(p_mmax[0]+1))/2):
+        raise ValueError("len(a)=="+str(alen)+" mismatches (lmax,mmax)==("+str(p_lmax[0])+","+str(p_mmax[0])+")")
+
+cdef void check_para4mlen(int mlen,int* p_nlat,int* p_nlon) except *:
+    """
+        check_para4mlen(int alen,int* p_nlat,int* p_nlon)
+        > checks whether parameters agree with the length of a Gauss-Legendre map
+
+    """
+    if(mlen<>p_nlat[0]*p_nlon[0]):
+        raise ValueError("len(m)=="+str(mlen)+" mismatches (nlat,nlon)==("+str(p_nlat[0])+","+str(p_nlon[0])+")")
+
+##-----------------------------------------------------------------------------
+
+cdef void set_para4alen(int alen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax) except *:
     """
         set_para4alen(int alen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax)
         > computes the parameters given the length of a spherical harmonics transform
@@ -110,12 +130,13 @@ cdef void set_para4alen(int alen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax
             p_lmax[0] = (alen+(p_mmax[0]+1)*p_mmax[0]/2)/(p_mmax[0]+1)-1
     elif(p_mmax[0]<0)or(p_mmax[0]>p_lmax[0]):
             p_mmax[0] = p_lmax[0]
+    check_para4alen(alen,p_lmax,p_mmax)
     if(p_nlat[0]<0):
         p_nlat[0] = p_lmax[0]+1
     if(p_nlon[0]<0):
         p_nlon[0] = 2*p_lmax[0]+1
 
-cdef void set_para4mlen(int mlen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax):
+cdef void set_para4mlen(int mlen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax) except *:
     """
         set_para4mlen(int mlen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax)
         > computes the parameters given the length of a Gauss-Legendre map
@@ -129,6 +150,7 @@ cdef void set_para4mlen(int mlen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax
             p_nlat[0] = mlen/p_nlon[0]
     elif(p_nlon[0]<0):
         p_nlon[0] = mlen/p_nlat[0]
+    check_para4mlen(mlen,p_nlat,p_nlon)
     if(p_lmax[0]<0):
         p_lmax[0] = p_nlat[0]-1
     if(p_mmax[0]<0)or(p_mmax[0]>p_lmax[0]):
@@ -136,9 +158,9 @@ cdef void set_para4mlen(int mlen,int* p_nlat,int* p_nlon,int* p_lmax,int* p_mmax
 
 ##-----------------------------------------------------------------------------
 
-cpdef int lm2i(np.ndarray[np.int_t,ndim=1] lm,int lmax):
+cpdef int lm2i(np.ndarray[np.int_t,ndim=1,mode='c'] lm,int lmax):
     """
-        lm2i(np.ndarray[np.int_t,ndim=1] lm,int lmax)
+        lm2i(np.ndarray[np.int_t,ndim=1,mode='c'] lm,int lmax)
         > computates the index of a spherical harmonics component for a given [l,m] tuple
 
         input:
@@ -151,7 +173,7 @@ cpdef int lm2i(np.ndarray[np.int_t,ndim=1] lm,int lmax):
     """
     return <int> lm[0]+lm[1]*lmax-lm[1]*(lm[1]-1)/2
 
-cpdef np.ndarray[np.int_t,ndim=1] i2lm(int i,int lmax):
+cpdef np.ndarray[np.int_t,ndim=1,mode='c'] i2lm(int i,int lmax):
     """
         i2lm(int lmax,int i)
         > computates the [l,m] tuple for a given index of a spherical harmonics component
@@ -164,14 +186,14 @@ cpdef np.ndarray[np.int_t,ndim=1] i2lm(int i,int lmax):
         - lm    vector containing [l,m]
 
     """
-    cdef np.ndarray[np.int_t,ndim=1] lm = np.empty(2,dtype=np.int)
+    cdef np.ndarray[np.int_t,ndim=1,mode='c'] lm = np.empty(2,dtype=np.int)
     lm[1] = int(ceil(((2*lmax+1)-sqrt((2*lmax+1)*(2*lmax+1)-8*(i-lmax)))/2)) ## int to np.int
     lm[0] = i-lm[1]*lmax+lm[1]*(lm[1]-1)/2
     return lm
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.int_t,ndim=1] pix2nn(int pix,int nlat,int nlon=-1):
+cpdef np.ndarray[np.int_t,ndim=1,mode='c'] pix2nn(int pix,int nlat,int nlon=-1):
     """
         pix2nn(int nlat,int nlon,int pix)
         > computates the all nearest neighbouring pixels sharing one edge with the give pixel
@@ -190,7 +212,7 @@ cpdef np.ndarray[np.int_t,ndim=1] pix2nn(int pix,int nlat,int nlon=-1):
     if(nlon<0):
         nlon = 2*nlat-1
     cdef int lat = pix/nlon
-    cdef np.ndarray[np.int_t,ndim=1] nn
+    cdef np.ndarray[np.int_t,ndim=1,mode='c'] nn
     if(lat==0):
         nn = np.array([lat*nlon+(pix-1)%nlon,lat*nlon+(pix+1)%nlon,pix+nlon],dtype=np.int)
     elif(lat==nlat-1):
@@ -205,14 +227,14 @@ cpdef np.ndarray[np.int_t,ndim=1] pix2nn(int pix,int nlat,int nlon=-1):
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float32_t,ndim=1] anaalm_f(np.ndarray[np.complex64_t,ndim=1] a,int lmax=-1,int mmax=-1):
+cpdef np.ndarray[np.float32_t,ndim=1,mode='c'] anaalm_f(np.ndarray[np.complex64_t,ndim=1,mode='c'] a,int lmax=-1,int mmax=-1):
     """
-        anaalm_f(np.ndarray[np.complex64_t,ndim=1] a,int lmax=-1,int mmax=-1)
+        anaalm_f(np.ndarray[np.complex64_t,ndim=1,mode='c'] a,int lmax=-1,int mmax=-1)
         > computates the angular power spectrum of a given spherical harmonics transform
         > float precision
 
         input:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
         parameters:
         - lmax  maximum l of the transform (assumed default obtained from len(a))
@@ -230,7 +252,8 @@ cpdef np.ndarray[np.float32_t,ndim=1] anaalm_f(np.ndarray[np.complex64_t,ndim=1]
             lmax = (<int> len(a)+(mmax+1)*mmax/2)/(mmax+1)-1
     elif(mmax<0)or(mmax>lmax):
             mmax = lmax
-    cdef np.ndarray[np.float32_t,ndim=1] c = np.zeros(lmax+1,dtype=np.float32)
+    check_para4alen(<int> len(a),&lmax,&mmax)
+    cdef np.ndarray[np.float32_t,ndim=1,mode='c'] c = np.zeros(lmax+1,dtype=np.float32)
     cdef float* p_c = <float*> c.data
     cdef c64* p_a = <c64*> a.data
     cdef int ll,mm,ii = 0
@@ -245,14 +268,14 @@ cpdef np.ndarray[np.float32_t,ndim=1] anaalm_f(np.ndarray[np.complex64_t,ndim=1]
 
 ##-----------------------------------------------------------------------------
 
-def alm2map_f(np.ndarray[np.complex64_t,ndim=1] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False):
+def alm2map_f(np.ndarray[np.complex64_t,ndim=1,mode='c'] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False):
     """
-        alm2map_f(np.ndarray[np.complex64_t,ndim=1] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False)
+        alm2map_f(np.ndarray[np.complex64_t,ndim=1,mode='c'] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False)
         > computates the Gauss-Legendre map from a given spherical harmonics transform
         > float precision
 
         input:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
         parameters:
         - nlat  number of latitudinal bins or "rings"               (default: lmax+1)
@@ -268,7 +291,9 @@ def alm2map_f(np.ndarray[np.complex64_t,ndim=1] a,int nlat=-1,int nlon=-1,int lm
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4alen(<int> len(a),&nlat,&nlon,&lmax,&mmax)
-    cdef np.ndarray[np.float32_t,ndim=1] m = np.empty(nlat*nlon,dtype=np.float32)
+    else:
+        check_para4alen(<int> len(a),&lmax,&mmax)
+    cdef np.ndarray[np.float32_t,ndim=1,mode='c'] m = np.empty(nlat*nlon,dtype=np.float32)
     a2m_f(<c64*> a.data,lmax,mmax,<float*> m.data,nlat,nlon)
     if(cl):
         return m,anaalm_f(a,lmax,mmax)
@@ -277,9 +302,9 @@ def alm2map_f(np.ndarray[np.complex64_t,ndim=1] a,int nlat=-1,int nlon=-1,int lm
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.complex64_t,ndim=1] map2alm_f(np.ndarray[np.float32_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1):
+cpdef np.ndarray[np.complex64_t,ndim=1,mode='c'] map2alm_f(np.ndarray[np.float32_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1):
     """
-        map2alm_f(np.ndarray[np.float32_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1)
+        map2alm_f(np.ndarray[np.float32_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1)
         > computates the spherical harmonics transform of a given Gauss-Legendre map
         > float precision
 
@@ -293,20 +318,22 @@ cpdef np.ndarray[np.complex64_t,ndim=1] map2alm_f(np.ndarray[np.float32_t,ndim=1
         - mmax  maximum m of the transform            (default: lmax)
 
         output:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
-    cdef np.ndarray[np.complex64_t,ndim=1] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex64)
+    else:
+        check_para4mlen(<int> len(m),&nlat,&nlon)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex64)
     m2a_f(<float*> m.data,nlat,nlon,<c64*> a.data,lmax,mmax,False)
     return a
 
 ##-----------------------------------------------------------------------------
 
-def anafast_f(np.ndarray[np.float32_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False):
+def anafast_f(np.ndarray[np.float32_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False):
     """
-        anafast_f(np.ndarray[np.float32_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False)
+        anafast_f(np.ndarray[np.float32_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False)
         > computates the angular power spectrum of a given Gauss-Legendre map
         > float precision
 
@@ -322,12 +349,14 @@ def anafast_f(np.ndarray[np.float32_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax
 
         output:
         - c     angular power spectrum        (note: len(c)==lmax+1)
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
-    cdef np.ndarray[np.complex64_t,ndim=1] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex64)
+    else:
+        check_para4mlen(<int> len(m),&nlat,&nlon)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex64)
     m2a_f(<float*> m.data,nlat,nlon,<c64*> a.data,lmax,mmax,False)
     if(alm):
         return anaalm_f(a,lmax,mmax),a
@@ -336,9 +365,9 @@ def anafast_f(np.ndarray[np.float32_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.complex64_t,ndim=1] synalm_f(np.ndarray[np.float32_t,ndim=1] c,int lmax=-1,int mmax=-1):
+cpdef np.ndarray[np.complex64_t,ndim=1,mode='c'] synalm_f(np.ndarray[np.float32_t,ndim=1,mode='c'] c,int lmax=-1,int mmax=-1):
     """
-        synalm(np.ndarray[np.float32_t,ndim=1] c,int lmax=-1,int mmax=-1)
+        synalm(np.ndarray[np.float32_t,ndim=1,mode='c'] c,int lmax=-1,int mmax=-1)
         > synthesises a spherical harmonics transform from a given angular power spectrum
         > float precision
 
@@ -350,14 +379,14 @@ cpdef np.ndarray[np.complex64_t,ndim=1] synalm_f(np.ndarray[np.float32_t,ndim=1]
         - mmax  maximum m of the transform (assumed default: lmax)
 
         output:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
-    if(lmax<0):
+    if(lmax<0)or(lmax>=(<int> len(c))):
         lmax = <int> len(c)-1
     if(mmax<0)or(mmax>lmax):
         mmax = lmax
-    cdef np.ndarray[np.complex64_t,ndim=1] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex64)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex64)
     cdef c64* p_a = <c64*> a.data
     cdef float* p_c = <float*> c.data
     cdef int ll,mm,ii = 0
@@ -374,9 +403,9 @@ cpdef np.ndarray[np.complex64_t,ndim=1] synalm_f(np.ndarray[np.float32_t,ndim=1]
 
 ##-----------------------------------------------------------------------------
 
-def synfast_f(np.ndarray[np.float32_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False):
+def synfast_f(np.ndarray[np.float32_t,ndim=1,mode='c'] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False):
     """
-        synfast(np.ndarray[np.float32_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False)
+        synfast(np.ndarray[np.float32_t,ndim=1,mode='c'] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False)
         > synthesises a spherical harmonics transform from a given angular power spectrum
         > float precision
 
@@ -392,19 +421,19 @@ def synfast_f(np.ndarray[np.float32_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax
 
         output:
         - m     Gauss-Legendre map            (note: len(m)==nlat*nlon)
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
-    if(lmax<0):
+    if(lmax<0)or(lmax>=(<int> len(c))):
         lmax = <int> len(c)-1
     if(mmax<0)or(mmax>lmax):
         mmax = lmax
-    cdef np.ndarray[np.complex64_t,ndim=1] a = synalm_f(c,lmax,mmax)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = synalm_f(c,lmax,mmax)
     if(nlat<0):
         nlat = lmax+1
     if(nlon<0):
         nlon = 2*lmax+1
-    cdef np.ndarray[np.float32_t,ndim=1] m = alm2map_f(a,nlat,nlon,lmax,mmax,cl=False)
+    cdef np.ndarray[np.float32_t,ndim=1,mode='c'] m = alm2map_f(a,nlat,nlon,lmax,mmax,cl=False)
     if(alm):
         return m,a
     else:
@@ -412,14 +441,14 @@ def synfast_f(np.ndarray[np.float32_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax
 
 ##-----------------------------------------------------------------------------
 
-cpdef float dotlm_f(np.ndarray[np.complex64_t,ndim=1] a, np.ndarray[np.complex64_t,ndim=1] b,int lmax=-1,int mmax=-1):
+cpdef float dotlm_f(np.ndarray[np.complex64_t,ndim=1,mode='c'] a, np.ndarray[np.complex64_t,ndim=1,mode='c'] b,int lmax=-1,int mmax=-1):
     """
-        dotlm(np.ndarray[np.complex64_t,ndim=1] a, np.ndarray[np.complex64_t,ndim=1] b,int lmax=-1,int mmax=-1)
+        dotlm(np.ndarray[np.complex64_t,ndim=1,mode='c'] a, np.ndarray[np.complex64_t,ndim=1,mode='c'] b,int lmax=-1,int mmax=-1)
         > computates the inner product of two given spherical harmonics transform
         > float precision
 
         input:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
         - b     spherical harmonics transform (note: len(b)==len(a))
 
         parameters:
@@ -438,6 +467,8 @@ cpdef float dotlm_f(np.ndarray[np.complex64_t,ndim=1] a, np.ndarray[np.complex64
             lmax = (<int> len(a)+(mmax+1)*mmax/2)/(mmax+1)-1
     elif(mmax<0)or(mmax>lmax):
             mmax = lmax
+    check_para4alen(<int> len(a),&lmax,&mmax)
+    check_para4alen(<int> len(b),&lmax,&mmax)
     cdef c64* p_a = <c64*> a.data
     cdef c64* p_b = <c64*> b.data
     cdef float dot = 0.0
@@ -453,9 +484,9 @@ cpdef float dotlm_f(np.ndarray[np.complex64_t,ndim=1] a, np.ndarray[np.complex64
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float32_t,ndim=1] weight_f(np.ndarray[np.float32_t,ndim=1] m,np.ndarray[np.float32_t,ndim=1] v,float p=1.0,int nlat=-1,int nlon=-1,bint overwrite=False):
+cpdef np.ndarray[np.float32_t,ndim=1,mode='c'] weight_f(np.ndarray[np.float32_t,ndim=1,mode='c'] m,np.ndarray[np.float32_t,ndim=1,mode='c'] v,float p=1.0,int nlat=-1,int nlon=-1,bint overwrite=False):
     """
-        weight(np.ndarray[np.float32_t,ndim=1] m,np.ndarray[np.float32_t,ndim=1] v,float pot=1.0,int nlat=-1,int nlon=-1)
+        weight(np.ndarray[np.float32_t,ndim=1,mode='c'] m,np.ndarray[np.float32_t,ndim=1,mode='c'] v,float pot=1.0,int nlat=-1,int nlon=-1)
         > weights a Gauss-Legendre map with the pixel sizes to a given power
         > input array will optionally be overwritten(!)
         > float precision
@@ -478,8 +509,9 @@ cpdef np.ndarray[np.float32_t,ndim=1] weight_f(np.ndarray[np.float32_t,ndim=1] m
         nlat = <int> len(v)
     if(nlon<0):
         nlon = 2*nlat-1
+    check_para4mlen(<int> len(m),&nlat,&nlon)
     cdef float* p_v = <float*> v.data
-    cdef np.ndarray[np.float32_t,ndim=1] n
+    cdef np.ndarray[np.float32_t,ndim=1,mode='c'] n
     cdef float* p_o
     if(overwrite):
         p_o = <float*> m.data
@@ -517,13 +549,13 @@ cpdef np.ndarray[np.float32_t,ndim=1] weight_f(np.ndarray[np.float32_t,ndim=1] m
 
 ##=============================================================================
 
-cpdef np.ndarray[np.float64_t,ndim=1] anaalm(np.ndarray[np.complex128_t,ndim=1] a,int lmax=-1,int mmax=-1):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] anaalm(np.ndarray[np.complex128_t,ndim=1,mode='c'] a,int lmax=-1,int mmax=-1):
     """
-        anaalm(np.ndarray[np.complex128_t,ndim=1] a,int lmax=-1,int mmax=-1):
+        anaalm(np.ndarray[np.complex128_t,ndim=1,mode='c'] a,int lmax=-1,int mmax=-1):
         > computates the angular power spectrum of a given spherical harmonics transform
 
         input:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
         parameters:
         - lmax  maximum l of the transform (assumed default obtained from len(a))
@@ -541,7 +573,8 @@ cpdef np.ndarray[np.float64_t,ndim=1] anaalm(np.ndarray[np.complex128_t,ndim=1] 
             lmax = (<int> len(a)+(mmax+1)*mmax/2)/(mmax+1)-1
     elif(mmax<0)or(mmax>lmax):
             mmax = lmax
-    cdef np.ndarray[np.float64_t,ndim=1] c = np.zeros(lmax+1,dtype=np.float64)
+    check_para4alen(<int> len(a),&lmax,&mmax)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] c = np.zeros(lmax+1,dtype=np.float64)
     cdef double* p_c = <double*> c.data
     cdef c128* p_a = <c128*> a.data
     cdef int ll,mm,ii = 0
@@ -556,13 +589,13 @@ cpdef np.ndarray[np.float64_t,ndim=1] anaalm(np.ndarray[np.complex128_t,ndim=1] 
 
 ##-----------------------------------------------------------------------------
 
-def alm2map(np.ndarray[np.complex128_t,ndim=1] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False):
+def alm2map(np.ndarray[np.complex128_t,ndim=1,mode='c'] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False):
     """
-        alm2map(np.ndarray[np.complex128_t,ndim=1] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False)
+        alm2map(np.ndarray[np.complex128_t,ndim=1,mode='c'] a,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint cl=False)
         > computates the Gauss-Legendre map from a given spherical harmonics transform
 
         input:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
         parameters:
         - nlat  number of latitudinal bins or "rings"               (default: lmax+1)
@@ -578,7 +611,9 @@ def alm2map(np.ndarray[np.complex128_t,ndim=1] a,int nlat=-1,int nlon=-1,int lma
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4alen(<int> len(a),&nlat,&nlon,&lmax,&mmax)
-    cdef np.ndarray[np.float64_t,ndim=1] m = np.empty(nlat*nlon,dtype=np.float64)
+    else:
+        check_para4alen(<int> len(a),&lmax,&mmax)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] m = np.empty(nlat*nlon,dtype=np.float64)
     a2m_d(<c128*> a.data,lmax,mmax,<double*> m.data,nlat,nlon)
     if(cl):
         return m,anaalm(a,lmax,mmax)
@@ -587,9 +622,9 @@ def alm2map(np.ndarray[np.complex128_t,ndim=1] a,int nlat=-1,int nlon=-1,int lma
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.complex128_t,ndim=1] map2alm(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1):
+cpdef np.ndarray[np.complex128_t,ndim=1,mode='c'] map2alm(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1):
     """
-        map2alm(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1)
+        map2alm(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1)
         > computates the spherical harmonics transform of a given Gauss-Legendre map
 
         input:
@@ -602,20 +637,22 @@ cpdef np.ndarray[np.complex128_t,ndim=1] map2alm(np.ndarray[np.float64_t,ndim=1]
         - mmax  maximum m of the transform            (default: lmax)
 
         output:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
-    cdef np.ndarray[np.complex128_t,ndim=1] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex128)
+    else:
+        check_para4mlen(<int> len(m),&nlat,&nlon)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex128)
     m2a_d(<double*> m.data,nlat,nlon,<c128*> a.data,lmax,mmax,False)
     return a
 
 ##-----------------------------------------------------------------------------
 
-def anafast(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False):
+def anafast(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False):
     """
-        anafast(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False)
+        anafast(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,bint alm=False)
         > computates the angular power spectrum of a given Gauss-Legendre map
 
         input:
@@ -630,12 +667,14 @@ def anafast(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-
 
         output:
         - c     angular power spectrum        (note: len(c)==lmax+1)
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
-    cdef np.ndarray[np.complex128_t,ndim=1] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex128)
+    else:
+        check_para4mlen(<int> len(m),&nlat,&nlon)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex128)
     m2a_d(<double*> m.data,nlat,nlon,<c128*> a.data,lmax,mmax,False)
     if(alm):
         return anaalm(a,lmax,mmax),a
@@ -644,9 +683,9 @@ def anafast(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.complex128_t,ndim=1] synalm(np.ndarray[np.float64_t,ndim=1] c,int lmax=-1,int mmax=-1):
+cpdef np.ndarray[np.complex128_t,ndim=1,mode='c'] synalm(np.ndarray[np.float64_t,ndim=1,mode='c'] c,int lmax=-1,int mmax=-1):
     """
-        synalm(np.ndarray[np.float64_t,ndim=1] c,int lmax=-1,int mmax=-1)
+        synalm(np.ndarray[np.float64_t,ndim=1,mode='c'] c,int lmax=-1,int mmax=-1)
         > synthesises a spherical harmonics transform from a given angular power spectrum
 
         input:
@@ -657,14 +696,14 @@ cpdef np.ndarray[np.complex128_t,ndim=1] synalm(np.ndarray[np.float64_t,ndim=1] 
         - mmax  maximum m of the transform (assumed default: lmax)
 
         output:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
-    if(lmax<0):
+    if(lmax<0)or(lmax>=(<int> len(c))):
         lmax = <int> len(c)-1
     if(mmax<0)or(mmax>lmax):
         mmax = lmax
-    cdef np.ndarray[np.complex128_t,ndim=1] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex128)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex128)
     cdef c128* p_a = <c128*> a.data
     cdef double* p_c = <double*> c.data
     cdef int ll,mm,ii = 0
@@ -681,9 +720,9 @@ cpdef np.ndarray[np.complex128_t,ndim=1] synalm(np.ndarray[np.float64_t,ndim=1] 
 
 ##-----------------------------------------------------------------------------
 
-def synfast(np.ndarray[np.float64_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False):
+def synfast(np.ndarray[np.float64_t,ndim=1,mode='c'] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False):
     """
-        synfast(np.ndarray[np.float64_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False)
+        synfast(np.ndarray[np.float64_t,ndim=1,mode='c'] c,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,alm=False)
         > synthesises a spherical harmonics transform from a given angular power spectrum
 
         input:
@@ -698,19 +737,19 @@ def synfast(np.ndarray[np.float64_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax=-
 
         output:
         - m     Gauss-Legendre map            (note: len(m)==nlat*nlon)
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
     """
-    if(lmax<0):
+    if(lmax<0)or(lmax>=(<int> len(c))):
         lmax = <int> len(c)-1
     if(mmax<0)or(mmax>lmax):
         mmax = lmax
-    cdef np.ndarray[np.complex128_t,ndim=1] a = synalm(c,lmax,mmax)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = synalm(c,lmax,mmax)
     if(nlat<0):
         nlat = lmax+1
     if(nlon<0):
         nlon = 2*lmax+1
-    cdef np.ndarray[np.float64_t,ndim=1] m = alm2map(a,nlat,nlon,lmax,mmax,cl=False)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] m = alm2map(a,nlat,nlon,lmax,mmax,cl=False)
     if(alm):
         return m,a
     else:
@@ -718,13 +757,13 @@ def synfast(np.ndarray[np.float64_t,ndim=1] c,int nlat=-1,int nlon=-1,int lmax=-
 
 ##-----------------------------------------------------------------------------
 
-cpdef double dotlm(np.ndarray[np.complex128_t,ndim=1] a, np.ndarray[np.complex128_t,ndim=1] b,int lmax=-1,int mmax=-1):
+cpdef double dotlm(np.ndarray[np.complex128_t,ndim=1,mode='c'] a, np.ndarray[np.complex128_t,ndim=1,mode='c'] b,int lmax=-1,int mmax=-1):
     """
-        dotlm(np.ndarray[np.complex128_t,ndim=1] a, np.ndarray[np.complex128_t,ndim=1] b,int lmax=-1,int mmax=-1)
+        dotlm(np.ndarray[np.complex128_t,ndim=1,mode='c'] a, np.ndarray[np.complex128_t,ndim=1,mode='c'] b,int lmax=-1,int mmax=-1)
         > computates the inner product of two given spherical harmonics transform
 
         input:
-        - a     spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a     spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
         - b     spherical harmonics transform (note: len(b)==len(a))
 
         parameters:
@@ -743,6 +782,8 @@ cpdef double dotlm(np.ndarray[np.complex128_t,ndim=1] a, np.ndarray[np.complex12
             lmax = (<int> len(a)+(mmax+1)*mmax/2)/(mmax+1)-1
     elif(mmax<0)or(mmax>lmax):
             mmax = lmax
+    check_para4alen(<int> len(a),&lmax,&mmax)
+    check_para4alen(<int> len(b),&lmax,&mmax)
     cdef c128* p_a = <c128*> a.data
     cdef c128* p_b = <c128*> b.data
     cdef double dot = 0.0
@@ -772,14 +813,14 @@ cdef void gauk(int lmax,int mmax,double var,c128* p_a):
             p_a[i].re *= k
             p_a[i].im *= k
 
-cpdef np.ndarray[np.complex128_t,ndim=1] smoothalm(np.ndarray[np.complex128_t,ndim=1] a,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0,bint overwrite=True):
+cpdef np.ndarray[np.complex128_t,ndim=1,mode='c'] smoothalm(np.ndarray[np.complex128_t,ndim=1,mode='c'] a,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0,bint overwrite=True):
     """
-        smoothalm(np.ndarray[np.complex128_t,ndim=1] a,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0,bint overwrite=True)
+        smoothalm(np.ndarray[np.complex128_t,ndim=1,mode='c'] a,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0,bint overwrite=True)
         > smoothes a spherical harmonics transform with a Gaussian kernel
         > input array will optionally be overwritten(!)
 
         input:
-        - a          spherical harmonics transform (note: len(a)==(mmax+1)*(lmax-mmax/2+1))
+        - a          spherical harmonics transform (note: len(a)==(lmax+1)*(mmax+1)-(mmax*(mmax+1))/2)
 
         parameters:
         - lmax       maximum l of the transform                  (assumed default obtained from len(a))
@@ -800,9 +841,10 @@ cpdef np.ndarray[np.complex128_t,ndim=1] smoothalm(np.ndarray[np.complex128_t,nd
             lmax = (<int> len(a)+(mmax+1)*mmax/2)/(mmax+1)-1
     elif(mmax<0)or(mmax>lmax):
             mmax = lmax
+    check_para4alen(<int> len(a),&lmax,&mmax)
     if(sigma<0):
         sigma = fwhm/(2*sqrt(2*log(2.0)))
-    cdef np.ndarray[np.complex128_t,ndim=1] b
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] b
     if(overwrite):
         b = np.copy(a)
         gauk(lmax,mmax,sigma*sigma,<c128*> b.data)
@@ -813,9 +855,9 @@ cpdef np.ndarray[np.complex128_t,ndim=1] smoothalm(np.ndarray[np.complex128_t,nd
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float64_t,ndim=1] smoothmap(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] smoothmap(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0):
     """
-        smoothmap(np.ndarray[np.float64_t,ndim=1] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0,bint overwrite=False)
+        smoothmap(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,int lmax=-1,int mmax=-1,double fwhm=0.0,double sigma=-1.0,bint overwrite=False)
         > smoothes a Gauss-Legendre map with a Gaussian kernel
 
         input:
@@ -835,6 +877,8 @@ cpdef np.ndarray[np.float64_t,ndim=1] smoothmap(np.ndarray[np.float64_t,ndim=1] 
     """
     if(nlat<0)or(nlon<0)or(lmax<0)or(mmax<0):
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
+    else:
+        check_para4mlen(<int> len(m),&nlat,&nlon)
     if(sigma<0):
         sigma = fwhm/(2*sqrt(2*log(2.0)))
     return alm2map(smoothalm(map2alm(m,lmax=lmax,mmax=mmax),lmax=lmax,mmax=mmax,sigma=sigma,overwrite=True),nlat=nlat,nlon=nlon,lmax=lmax,mmax=mmax,cl=False)
@@ -900,7 +944,7 @@ cdef int get_lat4bounds(int nlat,double x,double* p_b):
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float64_t,ndim=1] vol(int nlat,int nlon=-1):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] vol(int nlat,int nlon=-1):
     """
         vol(int nlat,int nlon=-1)
         > computates the pixel size for each latitudinal bin or "ring"
@@ -917,7 +961,7 @@ cpdef np.ndarray[np.float64_t,ndim=1] vol(int nlat,int nlon=-1):
     """
     if(nlon<0):
         nlon = 2*nlat-1
-    cdef np.ndarray[np.float64_t,ndim=1] v = np.empty(nlat,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] v = np.empty(nlat,dtype=np.float64)
     cdef double* p_v = <double*> v.data
     gauleg(nlat,p_v,p_v)
     cdef int i
@@ -927,9 +971,9 @@ cpdef np.ndarray[np.float64_t,ndim=1] vol(int nlat,int nlon=-1):
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float64_t,ndim=1] weight(np.ndarray[np.float64_t,ndim=1] m,np.ndarray[np.float64_t,ndim=1] v,double p=1.0,int nlat=-1,int nlon=-1,bint overwrite=False):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] weight(np.ndarray[np.float64_t,ndim=1,mode='c'] m,np.ndarray[np.float64_t,ndim=1,mode='c'] v,double p=1.0,int nlat=-1,int nlon=-1,bint overwrite=False):
     """
-        weight(np.ndarray[np.float64_t,ndim=1] m,np.ndarray[np.float64_t,ndim=1] v,double pot=1.0,int nlat=-1,int nlon=-1,bint overwrite=False)
+        weight(np.ndarray[np.float64_t,ndim=1,mode='c'] m,np.ndarray[np.float64_t,ndim=1,mode='c'] v,double pot=1.0,int nlat=-1,int nlon=-1,bint overwrite=False)
         > weights a Gauss-Legendre map with the pixel sizes to a given power
         > input array will optionally be overwritten(!)
 
@@ -951,8 +995,9 @@ cpdef np.ndarray[np.float64_t,ndim=1] weight(np.ndarray[np.float64_t,ndim=1] m,n
         nlat = <int> len(v)
     if(nlon<0):
         nlon = 2*nlat-1
+    check_para4mlen(<int> len(m),&nlat,&nlon)
     cdef double* p_v = <double*> v.data
-    cdef np.ndarray[np.float64_t,ndim=1] n
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] n
     cdef double* p_o
     if(overwrite):
         p_o = <double*> m.data
@@ -1004,9 +1049,9 @@ def bounds(int nlat,int nlon=-1):
     """
     if(nlon<nlat):
         nlon = 2*nlat-1
-    cdef np.ndarray[np.float64_t,ndim=1] x = np.empty(nlon+1,dtype=np.float64) ## first used as dummy
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] x = np.empty(nlon+1,dtype=np.float64) ## first used as dummy
     cdef double* p_x = <double*> x.data
-    cdef np.ndarray[np.float64_t,ndim=1] y = np.empty(nlat+1,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] y = np.empty(nlat+1,dtype=np.float64)
     cdef double* p_y = <double*> y.data
     p_x[0] = -1.0
     p_y[0] = 0.0
@@ -1025,7 +1070,7 @@ def bounds(int nlat,int nlon=-1):
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float64_t,ndim=1] pix2ang(int pix,int nlat,int nlon=-1):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] pix2ang(int pix,int nlat,int nlon=-1):
     """
         pix2ang(int pix,int nlat,int nlon=-1)
         > computates the [phi,theta] vector for a given pixel index
@@ -1043,11 +1088,11 @@ cpdef np.ndarray[np.float64_t,ndim=1] pix2ang(int pix,int nlat,int nlon=-1):
     """
     if(nlon<0):
         nlon = 2*nlat-1
-    cdef np.ndarray[np.float64_t,ndim=1] x = np.empty(nlat,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] x = np.empty(nlat,dtype=np.float64)
     cdef double* p_x = <double*> x.data
-    cdef np.ndarray[np.float64_t,ndim=1] b = np.empty(nlat+1,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] b = np.empty(nlat+1,dtype=np.float64)
     cdef double* p_b = <double*> b.data
-    cdef np.ndarray[np.float64_t,ndim=1] ang = np.empty(2,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] ang = np.empty(2,dtype=np.float64)
     cdef double* p_ang = <double*> ang.data
     gauleg_w2b(nlat,p_x,p_b)
     p_ang[0] = 2*pi*(pix%nlon+0.5)/nlon
@@ -1056,9 +1101,9 @@ cpdef np.ndarray[np.float64_t,ndim=1] pix2ang(int pix,int nlat,int nlon=-1):
         p_ang[1] += 2*pi
     return ang
 
-cpdef int ang2pix(np.ndarray[np.float64_t,ndim=1] ang,int nlat,int nlon=-1):
+cpdef int ang2pix(np.ndarray[np.float64_t,ndim=1,mode='c'] ang,int nlat,int nlon=-1):
     """
-        ang2pix(np.ndarray[np.float64_t,ndim=1] ang,int nlat,int nlon=-1)
+        ang2pix(np.ndarray[np.float64_t,ndim=1,mode='c'] ang,int nlat,int nlon=-1)
         > computates the pixel index for a given [phi,theta] vector
 
         input:
@@ -1074,9 +1119,9 @@ cpdef int ang2pix(np.ndarray[np.float64_t,ndim=1] ang,int nlat,int nlon=-1):
     """
     if(nlon<0):
         nlon = 2*nlat-1
-    cdef np.ndarray[np.float64_t,ndim=1] x = np.empty(nlat,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] x = np.empty(nlat,dtype=np.float64)
     cdef double* p_x = <double*> x.data
-    cdef np.ndarray[np.float64_t,ndim=1] b = np.empty(nlat+1,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] b = np.empty(nlat+1,dtype=np.float64)
     cdef double* p_b = <double*> b.data
     cdef double* p_ang = <double*> ang.data
     gauleg_w2b(nlat,p_x,p_b)
@@ -1084,9 +1129,9 @@ cpdef int ang2pix(np.ndarray[np.float64_t,ndim=1] ang,int nlat,int nlon=-1):
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float64_t,ndim=1] ang2xyz(np.ndarray[np.float64_t,ndim=1] ang):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] ang2xyz(np.ndarray[np.float64_t,ndim=1,mode='c'] ang):
     """
-        ang2xyz(np.ndarray[np.float64_t,ndim=1] ang)
+        ang2xyz(np.ndarray[np.float64_t,ndim=1,mode='c'] ang)
         > computates the [x,y,z] vector for a given [phi,theta] vector
 
         input:
@@ -1096,7 +1141,7 @@ cpdef np.ndarray[np.float64_t,ndim=1] ang2xyz(np.ndarray[np.float64_t,ndim=1] an
         - xyz  vector containing [x,y,z]
 
     """
-    cdef np.ndarray[np.float64_t,ndim=1] xyz = np.empty(3,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] xyz = np.empty(3,dtype=np.float64)
     cdef double* p_xyz = <double*> xyz.data
     cdef double* p_ang = <double*> ang.data
     p_xyz[0] = sin(p_ang[1])*cos(p_ang[0])
@@ -1104,9 +1149,9 @@ cpdef np.ndarray[np.float64_t,ndim=1] ang2xyz(np.ndarray[np.float64_t,ndim=1] an
     p_xyz[2] = cos(p_ang[1])
     return xyz
 
-cpdef np.ndarray[np.float64_t,ndim=1] xyz2ang(np.ndarray[np.float64_t,ndim=1] xyz):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] xyz2ang(np.ndarray[np.float64_t,ndim=1,mode='c'] xyz):
     """
-        xyz2ang(np.ndarray[np.float64_t,ndim=1] xyz)
+        xyz2ang(np.ndarray[np.float64_t,ndim=1,mode='c'] xyz)
         > computates the [phi,theta] vector for a given [x,y,z] vector
 
         input:
@@ -1116,7 +1161,7 @@ cpdef np.ndarray[np.float64_t,ndim=1] xyz2ang(np.ndarray[np.float64_t,ndim=1] xy
         - ang  vector containing [phi,theta] in radian
 
     """
-    cdef np.ndarray[np.float64_t,ndim=1] ang = np.empty(2,dtype=np.float64)
+    cdef np.ndarray[np.float64_t,ndim=1,mode='c'] ang = np.empty(2,dtype=np.float64)
     cdef double* p_ang = <double*> ang.data
     cdef double* p_xyz = <double*> xyz.data
     cdef double r = 0.0
@@ -1133,7 +1178,7 @@ cpdef np.ndarray[np.float64_t,ndim=1] xyz2ang(np.ndarray[np.float64_t,ndim=1] xy
 
 ##-----------------------------------------------------------------------------
 
-cpdef np.ndarray[np.float64_t,ndim=1] pix2xyz(int pix,int nlat,int nlon=-1):
+cpdef np.ndarray[np.float64_t,ndim=1,mode='c'] pix2xyz(int pix,int nlat,int nlon=-1):
     """
         pix2xyz(int pix,int nlat,int nlon=-1)
         > computates the [x,y,z] vector for a given pixel index
@@ -1152,9 +1197,9 @@ cpdef np.ndarray[np.float64_t,ndim=1] pix2xyz(int pix,int nlat,int nlon=-1):
     return ang2xyz(pix2ang(pix,nlat,nlon))
 
 
-cpdef int xyz2pix(np.ndarray[np.float64_t,ndim=1] xyz,int nlat,int nlon=-1):
+cpdef int xyz2pix(np.ndarray[np.float64_t,ndim=1,mode='c'] xyz,int nlat,int nlon=-1):
     """
-        xyz2pix(np.ndarray[np.float64_t,ndim=1] xyz,int nlat,int nlon=-1)
+        xyz2pix(np.ndarray[np.float64_t,ndim=1,mode='c'] xyz,int nlat,int nlon=-1)
         > computates the pixel index for a given [x,y,z] vector
 
         input:
