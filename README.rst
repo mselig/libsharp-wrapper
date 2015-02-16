@@ -117,8 +117,8 @@ In Python run::
 
 	>>> import numpy as np
 	>>> import libsharp_wrapper_gl as gl
-	>>> gl.map2alm(np.ones(28), nlat=4, nlon=7, lmax=3, mmax=3)[0]
-	(3.5449077018110322+0j)
+	>>> gl.map2alm(np.ones(28), nlat=4, nlon=7, lmax=3, mmax=3)[0]**2 # == 4 pi
+	(12.566370614359174+0j)
 
 Release Notes
 -------------
@@ -127,5 +127,6 @@ The **libsharp-wrapper** is licensed under the
 `GPLv2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
 and is distributed *without any warranty*.
 
-The current version is tagged **v0.1.2**.
+The current version is tagged **v0.2.0** and is available as a source package
+at `<https://github.com/mselig/libsharp-wrapper/tags>`_.
 

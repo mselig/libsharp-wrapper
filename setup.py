@@ -47,7 +47,7 @@ exmod = [extension("libsharp_wrapper_gl",
                    libraries=libs)]
 
 setup(name="libsharp_wrapper_gl",
-      version="0.1",
+      version="0.2",
       author="Marco Selig",
       author_email="mselig@mpa-garching.mpg.de",
       cmdclass={"build_ext": build_ext},
