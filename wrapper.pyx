@@ -325,7 +325,7 @@ cpdef np.ndarray[np.complex64_t,ndim=1,mode='c'] map2alm_f(np.ndarray[np.float32
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
     else:
         check_para4mlen(<int> len(m),&nlat,&nlon)
-    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex64)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex64)
     m2a_f(<float*> m.data,nlat,nlon,<c64*> a.data,lmax,mmax,False)
     return a
 
@@ -356,7 +356,7 @@ def anafast_f(np.ndarray[np.float32_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
     else:
         check_para4mlen(<int> len(m),&nlat,&nlon)
-    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex64)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex64)
     m2a_f(<float*> m.data,nlat,nlon,<c64*> a.data,lmax,mmax,False)
     if(alm):
         return anaalm_f(a,lmax,mmax),a
@@ -386,7 +386,7 @@ cpdef np.ndarray[np.complex64_t,ndim=1,mode='c'] synalm_f(np.ndarray[np.float32_
         lmax = <int> len(c)-1
     if(mmax<0)or(mmax>lmax):
         mmax = lmax
-    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex64)
+    cdef np.ndarray[np.complex64_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex64)
     cdef c64* p_a = <c64*> a.data
     cdef float* p_c = <float*> c.data
     cdef int ll,mm,ii = 0
@@ -644,7 +644,7 @@ cpdef np.ndarray[np.complex128_t,ndim=1,mode='c'] map2alm(np.ndarray[np.float64_
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
     else:
         check_para4mlen(<int> len(m),&nlat,&nlon)
-    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex128)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex128)
     m2a_d(<double*> m.data,nlat,nlon,<c128*> a.data,lmax,mmax,False)
     return a
 
@@ -674,7 +674,7 @@ def anafast(np.ndarray[np.float64_t,ndim=1,mode='c'] m,int nlat=-1,int nlon=-1,i
         set_para4mlen(<int> len(m),&nlat,&nlon,&lmax,&mmax)
     else:
         check_para4mlen(<int> len(m),&nlat,&nlon)
-    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex128)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex128)
     m2a_d(<double*> m.data,nlat,nlon,<c128*> a.data,lmax,mmax,False)
     if(alm):
         return anaalm(a,lmax,mmax),a
@@ -703,7 +703,7 @@ cpdef np.ndarray[np.complex128_t,ndim=1,mode='c'] synalm(np.ndarray[np.float64_t
         lmax = <int> len(c)-1
     if(mmax<0)or(mmax>lmax):
         mmax = lmax
-    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((mmax+1)*(lmax+1)-(mmax+1)*mmax/2,dtype=np.complex128)
+    cdef np.ndarray[np.complex128_t,ndim=1,mode='c'] a = np.empty((lmax+1)*(mmax+1)-(mmax*(mmax+1))/2,dtype=np.complex128)
     cdef c128* p_a = <c128*> a.data
     cdef double* p_c = <double*> c.data
     cdef int ll,mm,ii = 0
