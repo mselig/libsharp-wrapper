@@ -71,7 +71,7 @@ cimport numpy as np
 
 cdef extern from "math.h":
     double sqrt(double)
-    double abs(double)
+    double fabs(double)
     double ceil(double)
     double log(double)
     double exp(double)
@@ -891,10 +891,10 @@ cdef void gauleg(int nlat,double* p_x,double* p_w):
         > computes roots and weights of a Gauss-Legendre transformation over [-1,1]
 
     """
-    cdef int i,j,imax = nlat/2+1
+    cdef int i,j,imax = (nlat+1)/2
     cdef bint done
     cdef double c0,c1,p1,p2,p3,pp
-    for i in range(1,imax):
+    for i in range(1,imax+1):
         c0 = cos(pi*(i-0.25)/(nlat+0.5))
         done = False
         while(True):
@@ -909,7 +909,7 @@ cdef void gauleg(int nlat,double* p_x,double* p_w):
             c0 = c1-p1/pp
             if(done):
                 break
-            if(abs(c0-c1)<=3.0E-15): ## arbitrary small number
+            if(fabs(c0-c1)<=3.0E-15): ## arbitrary small number
                 done = True
         p_x[i-1] = -c0
         p_x[nlat-i] = c0
