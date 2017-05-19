@@ -127,6 +127,6 @@ The **libsharp-wrapper** is licensed under the
 `GPLv2 <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
 and is distributed *without any warranty*.
 
-The current version is tagged **v0.2.0** and is available as a source package
+The current version is tagged **v0.2.1** and is available as a source package
 at `<https://github.com/mselig/libsharp-wrapper/tags>`_.
 
